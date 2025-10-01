@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mattermost-push-proxy.fullname" . }}
+  labels:
+    {{- include "mattermost-push-proxy.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.internalPort }}"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: {{ include "mattermost-push-proxy.name" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--config"
+            - "{{ .Values.general.config.path }}/{{ .Values.general.config.file }}"
+          ports:
+            - containerPort: {{ .Values.service.internalPort }}
+          volumeMounts:
+            # Config
+            {{- if (hasKey .Values.general "existingSecret" ) }}
+            - mountPath: {{ .Values.general.config.path }}
+              name: "push-config-template"
+              subPath: {{ .Values.general.existingSecret.keys.config }}
+            {{- end }}
+            # Auth
+            {{- if (hasKey .Values.apple.existingSecret "auth") }}
+            - mountPath: {{ .Values.general.config.path }}
+              name: "apple-auth-key"
+              subPath: {{ .Values.apple.existingSecret.auth.keys.authKey }}
+            {{- end }}
+            # Apple
+            {{- if (hasKey .Values.apple.existingSecret "apple") }}
+            - mountPath: {{ .Values.general.config.certs.path }}
+              name: "apple-push-cert"
+              subPath: {{ .Values.apple.existingSecret.apple.keys.privateCert }}
+            {{- end }}
+            # Apple RN
+            {{- if (hasKey .Values.apple.existingSecret "apple_rn") }}
+            - mountPath: {{ .Values.general.config.certs.path }}
+              name: "apple-rn-push-cert"
+              subPath: {{ .Values.apple.existingSecret.apple_rn.keys.privateCert }}
+            {{- end }}
+            # Apple RN Beta
+            {{- if (hasKey .Values.apple.existingSecret "apple_rnbeta") }}
+            - mountPath: {{ .Values.general.config.certs.path }}
+              name: "apple-rnbeta-push-cert"
+              subPath: {{ .Values.apple.existingSecret.apple_rnbeta.keys.privateCert }}
+            {{- end }}
+            # Android
+            {{- if (hasKey .Values.android.existingSecret "android") }}
+            - mountPath: {{ .Values.general.config.path }}
+              name: "android-service-file"
+              subPath: {{ .Values.android.existingSecret.android.keys.serviceFile }}
+            {{- end }}
+            # Android RN
+            {{- if (hasKey .Values.android.existingSecret "android_rn") }}
+            - mountPath: {{ .Values.general.config.path }}
+              name: "android-rn-service-file"
+              subPath: {{ .Values.android.existingSecret.android_rn.keys.serviceFile }}
+            {{- end }}
+          {{- with .Values.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        # Config
+        {{- if (hasKey .Values.general "existingSecret" ) }}
+        - name: "push-config-template"
+          secret:
+            secretName: {{ .Values.general.existingSecret.name }}
+            items:
+            - key: {{ .Values.general.existingSecret.keys.config }}
+              path: {{ .Values.general.existingSecret.keys.config }}
+        {{- end }}
+        # Auth
+        {{- if (hasKey .Values.apple.existingSecret "auth") }}
+        - name: "apple-auth-key"
+          secret:
+            secretName: {{ .Values.apple.existingSecret.auth.name }}
+            items:
+            - key:  {{ .Values.apple.existingSecret.auth.keys.authKey }}
+              path: {{ .Values.apple.existingSecret.auth.keys.authKey }}
+        {{- end }}
+        # Apple
+        {{- if (hasKey .Values.apple.existingSecret "apple") }}
+        - name: "apple-push-cert"
+          secret:
+            secretName: {{ .Values.apple.existingSecret.apple.name }}
+            items:
+            - key:  {{ .Values.apple.existingSecret.apple.keys.authKey }}
+              path: {{ .Values.apple.existingSecret.apple.keys.authKey }}
+        {{- end }}
+        # Apple RN
+        {{- if (hasKey .Values.apple.existingSecret "apple_rn") }}
+        - name: "apple-rn-push-cert"
+          secret:
+            secretName: {{ .Values.apple.existingSecret.apple_rn.name }}
+            items:
+            - key:  {{ .Values.apple.existingSecret.apple_rn.keys.authKey }}
+              path: {{ .Values.apple.existingSecret.apple_rn.keys.authKey }}
+        {{- end }}
+        # Apple RN Beta
+        {{- if (hasKey .Values.apple.existingSecret "apple_rnbeta") }}
+        - name: "apple-rnbeta-push-cert"
+          secret:
+            secretName: {{ .Values.apple.existingSecret.apple_rnbeta.name }}
+            items:
+            - key:  {{ .Values.apple.existingSecret.apple_rnbeta.keys.authKey }}
+              path: {{ .Values.apple.existingSecret.apple_rnbeta.keys.authKey }}
+        {{- end }}
+        # Android
+        {{- if (hasKey .Values.android.existingSecret "android") }}
+        - name: "android-service-file"
+          secret:
+            secretName: {{ .Values.android.existingSecret.android.name }}
+            items:
+            - key:  {{ .Values.android.existingSecret.android.keys.serviceFile }}
+              path: {{ .Values.android.existingSecret.android.keys.serviceFile }}
+        {{- end }}
+        # Android RN
+        {{- if (hasKey .Values.android.existingSecret "android_rn") }}
+        - name: "android-rn-service-file"
+          secret:
+            secretName: {{ .Values.android.existingSecret.android_rn.name }}
+            items:
+            - key:  {{ .Values.android.existingSecret.android_rn.keys.serviceFile }}
+              path: {{ .Values.android.existingSecret.android_rn.keys.serviceFile }}
+        {{- end }}

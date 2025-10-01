@@ -1,0 +1,126 @@
+replicaCount: 1
+image:
+  repository: mattermost/mattermost-push-proxy
+  pullPolicy: Always
+
+resources:
+  {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+service:
+  type: ClusterIP
+  port: 8066
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: push-proxy.example.local
+      paths:
+        - path: /
+          # -- pathType (e.g. ImplementationSpecific, Prefix, .. etc.)
+          # pathType: Prefix
+
+        # Example of a CustomService Path, using AWS Load Balancer controller to filter traffic reaching /metrics
+        # Directives `customService` & `customServiceSpec` in use
+        # - path: /metrics
+        #   pathType: Prefix
+        #   customService: true
+        #   customServiceSpec:
+        #     service:
+        #       name: response-403
+        #       port:
+        #         name: use-annotation
+
+  tls: []
+  #  - secretName: push-proxy-example-tls
+  #    hosts:
+  #      - push-proxy.example.local
+
+metrics:
+  enabled: false
+  serviceMonitor:
+    # Additional labels that can be used so ServiceMonitor will be discovered by Prometheus
+    additionalLabels: {}
+    # Interval at which metrics should be scraped.
+    interval: "30s"
+    # The name of the label on the target service to use as the job name in Prometheus
+    jobLabel: ""
+    # MetricRelabelConfigs to apply to samples before ingestion
+    metricRelabelings: {}
+    # Namespace for the ServiceMonitor Resource (defaults to the Release Namespace)
+    namespace: ""
+    # The path used by Prometheus to scrape metrics
+    path: "/metrics"
+    # RelabelConfigs to apply to samples before scraping
+    relabelings: {}
+    # Timeout after which the scrape is ended
+    scrapeTimeout: ""
+
+general:
+  existingSecret:
+    name: mattermost-push-proxy-config
+    keys:
+      config: push-config.json
+  config:
+    path: /mattermost-push-proxy/config
+
+apple:
+  existingSecret:
+    auth:
+      name: mattermost-push-proxy-apple
+      keys:
+        authKey: auth-key.p8
+  # apple:
+  #   name: mattermost-push-proxy-apple
+  #   keys:
+  #     privateCert: ""
+  #     privateCertPassword: ""
+  #     pushTopic: push-topic`
+  # apple_rn:
+  #   name: mattermost-push-proxy-apple
+  #   keys:
+  #     privateCert: ""
+  #     privateCertPassword: ""
+  #     pushTopic: push-topic`
+  # apple_rnbeta:
+  #   name: mattermost-push-proxy-apple
+  #   keys:
+  #     privateCert: ""
+  #     privateCertPassword: ""
+  #     pushTopic: push-topic`
+
+  config:
+    auth:
+      id: ""
+      teamId: ""
+    certs:
+      path: /certs
+
+android:
+  existingSecret: {}
+  # android:
+  #   name: mattermost-push-proxy-android
+  #   keys:
+  #     serviceFile: ""
+  # android_rn:
+  #   name: mattermost-push-proxy-android
+  #   keys:
+  #     serviceFile: ""

@@ -1,0 +1,20 @@
+apiVersion: v2
+description: Mattermost Push Proxy server
+name: mattermost-push-proxy
+type: application
+version: 0.0.1
+appVersion: 6.3.0
+keywords:
+  - mattermost
+  - communication
+  - notification
+  - messaging
+  - team collaboration
+home: https://mattermost.com
+icon: http://www.mattermost.org/wp-content/uploads/2016/04/icon.png
+maintainers:
+  - name: haukemettendorf
+    email: hauke@mettendorf.it
+sources:
+  - https://github.com/mattermost/mattermost-helm
+  - https://github.com/hauke.cloud/mattermost-push-proxy
